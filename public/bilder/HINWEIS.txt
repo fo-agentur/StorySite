@@ -1,0 +1,6 @@
+In diesen Ordner kommen die Familienfotos und die Faksimiles der Feldpostbriefe.
+
+Beispiel: taufe-1942.jpg hierher legen und in data/timeline.ts beim passenden
+Kapitel eintragen:  image: { src: "/bilder/taufe-1942.jpg", ... }
+
+Empfehlung: JPG-Dateien, längste Kante ca. 1600–2000 Pixel.
