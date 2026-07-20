@@ -19,6 +19,11 @@ export default function Hero() {
         </span>
       </div>
 
+      {/* weicher Papierschein, damit der Titel über der Karte ruhig steht */}
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 h-[70vmin] w-[92vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper/70 blur-3xl"
+      />
       <div className="relative w-full max-w-2xl">
         <Reveal delay={100}>
           <p className="font-sans text-[11px] uppercase tracking-[0.38em] text-rust">

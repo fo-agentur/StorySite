@@ -4,21 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { CHAPTERS, HERO, OUTRO } from "@/data/timeline";
 import Grain from "./Grain";
 import Hero from "./Hero";
+import MapStage from "./MapStage";
 import Outro from "./Outro";
-import ScrollMap from "./ScrollMap";
 import TimelineChapter from "./TimelineChapter";
-import YearIndicator from "./YearIndicator";
 
 /**
- * Orchestriert das Scroll-Erlebnis:
- * misst die Positionen aller Stationen, interpoliert das aktuelle Jahr
- * und steuert Zeitleiste + Karte.
+ * Die Karte ist die Bühne: Sie füllt den ganzen Schirm, die Kapitel
+ * ziehen als Papierkarten darüber hinweg. Diese Komponente misst die
+ * Scroll-Position, interpoliert das Jahr und steuert die Kartenkamera.
  */
 export default function Story() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [year, setYear] = useState(HERO.yearValue);
   const [progress, setProgress] = useState(0);
-  const [nodeIndex, setNodeIndex] = useState(0); // 0 = Hero, 1…n = Kapitel, n+1 = Ausklang
+  const [nodeIndex, setNodeIndex] = useState(0); // 0 = Prolog, 1…n = Kapitel, n+1 = Ausklang
 
   useEffect(() => {
     const container = containerRef.current;
@@ -57,7 +56,7 @@ export default function Story() {
       }
       setYear(Math.round(y));
 
-      // Nächstgelegene Station bestimmt Karte & Beschriftung
+      // Nächstgelegene Station bestimmt Kamera & Kartenzustand
       let nearest = 0;
       let best = Infinity;
       for (let i = 0; i < centers.length; i++) {
@@ -110,35 +109,30 @@ export default function Story() {
     };
   }, []);
 
-  const chapterIndex = nodeIndex - 1; // -1 = Hero … CHAPTERS.length = Ausklang
-  const railVisible = nodeIndex > 0;
-  const mapVisible = chapterIndex >= 0 && chapterIndex < CHAPTERS.length;
-  const mapIndex = Math.min(Math.max(chapterIndex, 0), CHAPTERS.length - 1);
-  const railLabel =
-    chapterIndex < 0
-      ? "Prolog"
-      : chapterIndex >= CHAPTERS.length
-        ? "Ausklang"
-        : `Kapitel ${CHAPTERS[chapterIndex].chapter} — ${
-            CHAPTERS[chapterIndex].kicker ?? CHAPTERS[chapterIndex].title
-          }`;
-
   return (
     <div ref={containerRef} className="relative">
+      <MapStage nodeIndex={nodeIndex} year={year} progress={progress} />
       <Grain />
-      <YearIndicator
-        year={year}
-        progress={progress}
-        visible={railVisible}
-        label={railLabel}
-      />
-      <ScrollMap activeIndex={mapIndex} visible={mapVisible} />
-      <main>
+
+      {/* Feine Fortschrittslinie ganz oben */}
+      <div aria-hidden="true" className="fixed inset-x-0 top-0 z-30 h-[2px]">
+        <div
+          className="h-full bg-rust/80"
+          style={{ width: `${(progress * 100).toFixed(2)}%` }}
+        />
+      </div>
+
+      <main className="relative z-10">
         <div data-story-node data-year={HERO.yearValue}>
           <Hero />
         </div>
         {CHAPTERS.map((chapter) => (
-          <div key={chapter.id} data-story-node data-year={chapter.yearValue}>
+          <div
+            key={chapter.id}
+            data-story-node
+            data-year={chapter.yearValue}
+            className="flex min-h-[135vh] items-center justify-center px-4 py-20 sm:px-8 lg:justify-end lg:pr-[7vw]"
+          >
             <TimelineChapter chapter={chapter} />
           </div>
         ))}

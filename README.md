@@ -46,23 +46,14 @@ markiert. Absätze können beliebig ersetzt, ergänzt oder gestrichen werden.
 Auch Intro (`HERO`) und Schlusswort (`OUTRO`, Widmung der Familie) stehen in
 derselben Datei.
 
-## 3. Fotos & Feldpostbriefe einsetzen
+## 3. Fotos & Feldpostbriefe (derzeit ausgeblendet)
 
-1. Bilddatei in den Ordner **`public/bilder/`** legen, z. B. `public/bilder/taufe-1942.jpg`
-2. Im jeweiligen Kapitel in `data/timeline.ts` beim Feld `image` den Pfad eintragen:
-
-```ts
-image: {
-  src: "/bilder/taufe-1942.jpg",   // ← diese Zeile ergänzen
-  alt: "Taufe in der Johann-Nepomuk-Kirche",
-  caption: "Die Taufe am 24. Februar 1942.",
-  kind: "foto",                    // "foto" | "feldpost" | "dokument"
-  aspect: "4/3",                   // optional: Seitenverhältnis des Rahmens
-},
-```
-
-Solange kein `src` gesetzt ist, zeigt die Seite einen ruhigen, gestalteten
-Platzhalter — das Layout bleibt immer intakt.
+Die Seite verzichtet momentan bewusst auf Bilder — die Karte ist die Bühne.
+Die `image`-Einträge in `data/timeline.ts` bleiben aber vorbereitet. Um Bilder
+später wieder anzuzeigen: in `components/story/TimelineChapter.tsx` die
+Komponente `ImageSlot` wieder einbinden (sie liegt fertig unter
+`components/story/ImageSlot.tsx`), Bilddateien nach **`public/bilder/`** legen
+und beim Kapitel `image.src` setzen, z. B. `src: "/bilder/taufe-1942.jpg"`.
 
 ## 4. Auf Vercel veröffentlichen / aktualisieren
 

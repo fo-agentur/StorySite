@@ -1,9 +1,11 @@
 "use client";
 
 import { CHAPTERS, type Chapter } from "@/data/timeline";
-import ImageSlot from "./ImageSlot";
 import Reveal from "./Reveal";
 
+/**
+ * Ein Kapitel als schwebende Papierkarte über der großen Karte.
+ */
 export default function TimelineChapter({ chapter }: { chapter: Chapter }) {
   const total = CHAPTERS.length;
 
@@ -11,13 +13,14 @@ export default function TimelineChapter({ chapter }: { chapter: Chapter }) {
     <section
       id={chapter.id}
       aria-labelledby={`${chapter.id}-titel`}
-      className="relative px-5 sm:px-8"
+      className="relative w-full max-w-xl border border-ink/25 bg-paper/[0.94] shadow-[0_18px_60px_-18px_rgba(42,37,28,0.4)] backdrop-blur-md"
     >
-      <div className="mx-auto max-w-2xl py-[15vh] md:py-[18vh]">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-1.5 border border-ink/10" />
+      <div className="relative px-6 py-9 sm:px-9 sm:py-10 md:px-11 md:py-12">
         <Reveal>
           <div className="flex items-center gap-4">
-            <span aria-hidden="true" className="h-px w-10 shrink-0 bg-rust/70" />
-            <p className="font-sans text-[11px] uppercase tracking-[0.22em] text-ink-soft">
+            <span aria-hidden="true" className="hairline h-px w-10 shrink-0 bg-rust/70" />
+            <p className="font-sans text-[10.5px] uppercase tracking-[0.22em] text-ink-soft">
               Kapitel {chapter.chapter}
               <span aria-hidden="true"> / </span>
               <span className="text-ink-faint">{total}</span>
@@ -33,14 +36,14 @@ export default function TimelineChapter({ chapter }: { chapter: Chapter }) {
           </div>
           <h2
             id={`${chapter.id}-titel`}
-            className="mt-5 font-serif text-4xl leading-[1.06] tracking-tight text-ink md:text-[3.3rem]"
+            className="mt-4 font-serif text-3xl leading-[1.08] tracking-tight text-ink md:text-[2.6rem]"
           >
             {chapter.title}
           </h2>
         </Reveal>
 
         <Reveal delay={140}>
-          <div className="prose-book mt-10 text-[1.13rem] text-ink/90 md:text-[1.19rem]">
+          <div className="prose-book mt-7 text-[1.04rem] text-ink/90 md:text-[1.09rem]">
             {chapter.body.map((absatz, i) => (
               <p key={i} className={i === 0 ? "dropcap" : undefined}>
                 {absatz}
@@ -51,22 +54,16 @@ export default function TimelineChapter({ chapter }: { chapter: Chapter }) {
 
         {chapter.quote && (
           <Reveal delay={100}>
-            <figure className="my-12 border-l-2 border-rust/60 pl-6 md:my-14 md:pl-8">
-              <blockquote className="font-serif text-[1.5rem] italic leading-snug text-ink md:text-[1.8rem]">
+            <figure className="mt-9 border-l-2 border-rust/60 pl-5 md:pl-6">
+              <blockquote className="font-serif text-[1.3rem] italic leading-snug text-ink md:text-[1.5rem]">
                 {chapter.quote.text}
               </blockquote>
               {chapter.quote.source && (
-                <figcaption className="mt-4 font-sans text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+                <figcaption className="mt-3 font-sans text-[9.5px] uppercase tracking-[0.22em] text-ink-soft">
                   {chapter.quote.source}
                 </figcaption>
               )}
             </figure>
-          </Reveal>
-        )}
-
-        {chapter.image && (
-          <Reveal delay={120}>
-            <ImageSlot image={chapter.image} />
           </Reveal>
         )}
       </div>

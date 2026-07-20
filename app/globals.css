@@ -95,6 +95,22 @@ body {
   }
 }
 
+/* Die kleine Akzentlinie im Kapitelkopf zeichnet sich beim Erscheinen */
+.reveal .hairline {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.25s;
+}
+.reveal.in .hairline {
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal .hairline {
+    transform: none;
+    transition: none;
+  }
+}
+
 /* Angedeutete Briefzeilen im Feldpost-Platzhalter */
 .feldpost-lines {
   background-image: repeating-linear-gradient(
