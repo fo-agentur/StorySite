@@ -174,7 +174,11 @@ export default function MapStage({
   const markerTransitionCss = reduced ? "none" : "transform 1.15s cubic-bezier(0.34,1.5,0.64,1)";
 
   return (
-    <div className="fixed inset-0 z-0" aria-hidden="true">
+    <div
+      className="fixed inset-0 z-0"
+      aria-hidden="true"
+      style={{ transform: "translateZ(0)" }} // eigene Compositor-Ebene: gegen Ruckeln bei fixierten Elementen auf iOS Safari
+    >
       <svg
         viewBox="0 0 440 330"
         preserveAspectRatio="xMidYMid slice"
@@ -414,9 +418,17 @@ export default function MapStage({
           )}
         </g>
 
-        {/* ---- Festes Kartenzubehör (bewegt sich nicht mit) ---- */}
-        {/* Kompassrose */}
-        <g transform="translate(46 66)" opacity="0.75">
+      </svg>
+
+      {/* Kompassrose und Maßstab als bildschirmfixierte Overlays, nicht Teil
+          der SVG-viewBox: Auf schmalen Hochkant-Bildschirmen schneidet
+          preserveAspectRatio="slice" einen Großteil der Kartenbreite weg
+          (auf einem Handy sind von 440 Einheiten Breite nur ~150 sichtbar,
+          zentriert) — in Kartenkoordinaten platziertes Zubehör landet dann
+          außerhalb des sichtbaren Bereichs. Als eigenständige, am Bildschirm
+          verankerte Elemente bleiben beide auf jeder Bildschirmgröße sichtbar. */}
+      <div className="pointer-events-none absolute left-4 top-4 opacity-75 sm:left-6">
+        <svg width="34" height="34" viewBox="-30 -30 60 60" aria-hidden="true">
           <circle r="17" fill="none" stroke={`${INK},0.35)`} strokeWidth="0.8" />
           <circle r="2" fill={`${INK},0.4)`} />
           <path d="M 0 -15 L 3 0 L 0 4 L -3 0 Z" fill={`${RUST},0.75)`} />
@@ -427,9 +439,10 @@ export default function MapStage({
           <text y="29" textAnchor="middle" fontSize="7" fill={`${INK},0.4)`} className="font-serif">S</text>
           <text x="24" y="2.5" textAnchor="middle" fontSize="7" fill={`${INK},0.4)`} className="font-serif">O</text>
           <text x="-24" y="2.5" textAnchor="middle" fontSize="7" fill={`${INK},0.4)`} className="font-serif">W</text>
-        </g>
-        {/* Maßstab */}
-        <g transform="translate(30 306)" opacity="0.7">
+        </svg>
+      </div>
+      <div className="pointer-events-none absolute bottom-6 right-4 opacity-70 sm:right-6">
+        <svg width="82" height="20" viewBox="-2 -10 83 14" aria-hidden="true">
           <line x1="0" y1="0" x2="79" y2="0" stroke={`${INK},0.5)`} strokeWidth="1" />
           {[0, 19.75, 39.5, 59.25, 79].map((x) => (
             <line key={x} x1={x} y1="-2.5" x2={x} y2="2.5" stroke={`${INK},0.5)`} strokeWidth="0.9" />
@@ -438,9 +451,9 @@ export default function MapStage({
           <rect x="39.5" y="-1.2" width="19.75" height="2.4" fill={`${INK},0.4)`} />
           <text x="0" y="-6" fontSize="6" fill={`${INK},0.5)`} className="font-sans">0</text>
           <text x="36" y="-6" fontSize="6" fill={`${INK},0.5)`} className="font-sans">50</text>
-          <text x="72" y="-6" fontSize="6" fill={`${INK},0.5)`} className="font-sans">100 km</text>
-        </g>
-      </svg>
+          <text x="66" y="-6" fontSize="6" fill={`${INK},0.5)`} className="font-sans">100 km</text>
+        </svg>
+      </div>
 
       {/* Kartusche */}
       <div className="pointer-events-none absolute left-1/2 top-7 hidden -translate-x-1/2 border border-ink/30 bg-paper/80 px-6 py-2.5 text-center backdrop-blur-[2px] sm:block">
@@ -469,17 +482,11 @@ export default function MapStage({
           <div className="absolute left-0 top-0 h-full bg-rust" style={{ width: `${(progress * 100).toFixed(1)}%` }} />
         </div>
       </div>
-      <div className="pointer-events-none absolute right-4 top-4 lg:hidden">
-        <motion.p
-          key={year}
-          initial={reduced ? false : { opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="tabular border border-line bg-paper/85 px-3 py-1 font-serif text-lg text-ink backdrop-blur-sm"
-        >
-          {year}
-        </motion.p>
-      </div>
+      {/* Auf Mobil/Tablet bewusst kein zusätzlicher Jahres-Chip: Die große
+          Jahreszahl im jeweiligen Kapitel übernimmt diese Rolle bereits,
+          ein zweiter Wert oben rechts wäre auf dem kleinen Bildschirm nur
+          Redundanz. Der große Anno-Stempel bleibt ab lg: als ruhiges,
+          durchlaufendes Element, wo genug Platz dafür ist. */}
 
       {/* Kartenrahmen */}
       <div className="pointer-events-none absolute inset-2 border border-ink/25 sm:inset-3">
