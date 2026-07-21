@@ -22,6 +22,11 @@
 
 html {
   scroll-behavior: smooth;
+  /* Auf HTML setzen, nicht auf body: sonst zwingt die CSS-Overflow-Kopplung
+     (ein Achse non-visible + die andere unbenannt -> "auto") den body zu
+     einem eigenen Scroll-Container, und window.scrollY bleibt bei echtem
+     Scrollen auf 0 stehen (Jahr/Kamera würden nie mehr weiterlaufen). */
+  overflow-x: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -35,7 +40,6 @@ body {
   color: var(--color-ink);
   font-family: var(--font-serif);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
 }
 
 ::selection {

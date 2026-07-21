@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { CHAPTERS, PLACES, type PlaceId } from "@/data/timeline";
 
@@ -141,24 +140,15 @@ export default function MapStage({
   progress: number;
 }) {
   const reduced = useReducedMotion();
-  const [wide, setWide] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const apply = () => setWide(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
 
   const chapterIndex = Math.min(Math.max(nodeIndex - 1, 0), CHAPTERS.length - 1);
   const chapter = CHAPTERS[chapterIndex];
   const inStory = nodeIndex >= 1 && nodeIndex <= CHAPTERS.length;
   const isOverview = nodeIndex === 0 || nodeIndex > CHAPTERS.length;
 
-  const base = isOverview ? OVERVIEW : (CAMERA[chapter.id] ?? { x: PLACES[chapter.place].x, y: PLACES[chapter.place].y, z: 2.1 });
-  // Auf großen Schirmen liegt die Textkarte rechts — die Kamera rückt das Ziel nach links
-  const cam = { x: base.x + (wide && !isOverview ? 34 / base.z + 14 : 0), y: base.y, z: base.z };
+  // Die Karte hat jetzt den ganzen Schirm für sich — die Kamera zielt
+  // beim Ankommen direkt auf den Ort, ohne Ausweichmanöver für Text.
+  const cam = isOverview ? OVERVIEW : (CAMERA[chapter.id] ?? { x: PLACES[chapter.place].x, y: PLACES[chapter.place].y, z: 2.1 });
 
   const showZones = inStory && chapterIndex >= ZONEN_AB;
   const place = PLACES[chapter.place];
@@ -168,9 +158,20 @@ export default function MapStage({
     for (const r of CHAPTERS[i].route ?? []) visited.add(r);
   }
 
-  const camTransition = reduced
-    ? { duration: 0 }
-    : { type: "tween" as const, duration: 2.6, ease: [0.3, 0, 0.16, 1] as [number, number, number, number] };
+  // Bewusst reines CSS statt Framer Motion für die Elemente, deren Ziel sich
+  // über Re-Renders hinweg ändert (Kamera, Zonen, Marker, Niederdonau-Text):
+  // In diesem Aufbau griff Framers `animate`-Prop bei bereits gemounteten
+  // SVG-<g>/<text>-Elementen nicht zuverlässig, sobald sich nur die
+  // Zielwerte änderten (neu gemountete Elemente, z. B. die Routenlinien,
+  // waren davon nicht betroffen). Eine simple CSS-Transition ist hier
+  // robuster und exakt genauso ruhig.
+  const camTx = CX - cam.x * cam.z;
+  const camTy = CY - cam.y * cam.z;
+  const camTransformCss = `translate(${camTx}px, ${camTy}px) scale(${cam.z})`;
+  const camTransitionCss = reduced ? "none" : "transform 2.6s cubic-bezier(0.3,0,0.16,1)";
+  const zonesTransitionCss = reduced ? "none" : "opacity 2.2s ease";
+  const markerTransformCss = `translate(${place.x}px, ${place.y}px)`;
+  const markerTransitionCss = reduced ? "none" : "transform 1.15s cubic-bezier(0.34,1.5,0.64,1)";
 
   return (
     <div className="fixed inset-0 z-0" aria-hidden="true">
@@ -192,11 +193,13 @@ export default function MapStage({
         </defs>
 
         {/* ---- Kamera: alles hierin bewegt sich wie ein Kartenblatt ---- */}
-        <motion.g
-          initial={false}
-          animate={{ x: CX - cam.x * cam.z, y: CY - cam.y * cam.z, scale: cam.z }}
-          transition={camTransition}
-          style={{ transformOrigin: "0px 0px", willChange: "transform" }}
+        <g
+          style={{
+            transform: camTransformCss,
+            transformOrigin: "0px 0px",
+            transition: camTransitionCss,
+            willChange: "transform",
+          }}
         >
           {/* Papier */}
           <rect x="-140" y="-110" width="720" height="560" fill="url(#parchment)" />
@@ -256,27 +259,23 @@ export default function MapStage({
             </text>
           ))}
           {/* Niederdonau / Niederösterreich — die Karte wechselt den Namen mit der Geschichte */}
-          <motion.text
+          <text
             x={335} y={90} fontSize="9.5" letterSpacing="2.6" textAnchor="middle"
             fill={`${INK},0.3)`} className="font-serif"
-            initial={false}
-            animate={{ opacity: showZones ? 0 : 1 }}
-            transition={{ duration: 1.4 }}
+            style={{ opacity: showZones ? 0 : 1, transition: zonesTransitionCss }}
           >
             NIEDERDONAU
-          </motion.text>
-          <motion.text
+          </text>
+          <text
             x={335} y={90} fontSize="8.5" letterSpacing="1.8" textAnchor="middle"
             fill={`${INK},0.3)`} className="font-serif"
-            initial={false}
-            animate={{ opacity: showZones ? 1 : 0 }}
-            transition={{ duration: 1.4 }}
+            style={{ opacity: showZones ? 1 : 0, transition: zonesTransitionCss }}
           >
             NIEDERÖSTERREICH
-          </motion.text>
+          </text>
 
           {/* ---- Besatzungszonen, ab dem Kriegsende 1945 ---- */}
-          <motion.g initial={false} animate={{ opacity: showZones ? 1 : 0 }} transition={{ duration: reduced ? 0 : 2.2 }}>
+          <g style={{ opacity: showZones ? 1 : 0, transition: zonesTransitionCss }}>
             {/* sowjetische Zone: zarte Tönung östlich der Enns */}
             <path
               d="M 267 61 L 294 44 L 330 48 L 393 58 L 413 78 L 420 126 L 390 165 L 384 189 L 373 214 L 340 240 L 300 245 L 268 244 Z"
@@ -296,7 +295,7 @@ export default function MapStage({
             <text x="258" y="256" fontSize="7" letterSpacing="1.7" textAnchor="middle" fill={`${INK},0.42)`} className="font-sans">BRITISCHE ZONE</text>
             {/* Wien: geteilt in vier Sektoren */}
             <circle cx={PLACES.wien.x} cy={PLACES.wien.y} r="9.5" fill="none" stroke={`${RUST},0.5)`} strokeWidth="0.8" strokeDasharray="2.5 2.5" />
-          </motion.g>
+          </g>
 
           {/* ---- Die Reise ---- */}
           {inStory &&
@@ -376,11 +375,12 @@ export default function MapStage({
 
           {/* Der wandernde Marker */}
           {inStory && (
-            <motion.g
-              initial={false}
-              animate={{ x: place.x, y: place.y }}
-              transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 30, damping: 16, mass: 1.2 }}
-              style={{ willChange: "transform" }}
+            <g
+              style={{
+                transform: markerTransformCss,
+                transition: markerTransitionCss,
+                willChange: "transform",
+              }}
             >
               {!reduced && (
                 <motion.circle
@@ -394,12 +394,25 @@ export default function MapStage({
                   style={{ transformBox: "fill-box", transformOrigin: "center" }}
                 />
               )}
+              {!reduced && (
+                <motion.circle
+                  key={`landung-${chapter.id}`}
+                  r="4"
+                  fill="none"
+                  stroke={`${RUST},0.85)`}
+                  strokeWidth="1.3"
+                  initial={{ scale: 0.3, opacity: 0.9 }}
+                  animate={{ scale: 5.5, opacity: 0 }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                />
+              )}
               <circle r="7.5" fill="none" stroke={`${RUST},0.4)`} strokeWidth="1" />
               <circle r="3.8" fill="#9d4b32" />
               <circle r="1.3" fill="#f4eddd" />
-            </motion.g>
+            </g>
           )}
-        </motion.g>
+        </g>
 
         {/* ---- Festes Kartenzubehör (bewegt sich nicht mit) ---- */}
         {/* Kompassrose */}

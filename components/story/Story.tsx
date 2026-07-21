@@ -23,6 +23,7 @@ export default function Story() {
     const container = containerRef.current;
     if (!container) return;
 
+    let tops: number[] = [];
     let centers: number[] = [];
     let years: number[] = [];
     let raf = 0;
@@ -56,15 +57,16 @@ export default function Story() {
       }
       setYear(Math.round(y));
 
-      // Nächstgelegene Station bestimmt Kamera & Kartenzustand
+      // Welches Kapitel hat bereits begonnen? Bestimmt Kamera & Kartenzustand.
+      // Bewusst über den Blockanfang (nicht die -mitte) ermittelt: Jeder
+      // Kapitelblock ist jetzt Ankunft+Lesefläche, also deutlich höher als
+      // der Bildschirm. Eine Mittelpunkt-Suche würde die Karte erst tief
+      // im Lesetext auf das neue Kapitel umspringen lassen — spürbar zu
+      // spät fürs Auge, das schon den neuen Kapiteltitel sieht.
       let nearest = 0;
-      let best = Infinity;
-      for (let i = 0; i < centers.length; i++) {
-        const d = Math.abs(centers[i] - focus);
-        if (d < best) {
-          best = d;
-          nearest = i;
-        }
+      for (let i = 0; i < tops.length; i++) {
+        if (tops[i] <= focus) nearest = i;
+        else break;
       }
       setNodeIndex(nearest);
 
@@ -77,6 +79,7 @@ export default function Story() {
       const nodes = Array.from(
         container.querySelectorAll<HTMLElement>("[data-story-node]")
       );
+      tops = nodes.map((n) => n.offsetTop);
       centers = nodes.map((n) => n.offsetTop + n.offsetHeight / 2);
       years = nodes.map((n) => Number(n.dataset.year ?? "0"));
       update();
@@ -127,12 +130,7 @@ export default function Story() {
           <Hero />
         </div>
         {CHAPTERS.map((chapter) => (
-          <div
-            key={chapter.id}
-            data-story-node
-            data-year={chapter.yearValue}
-            className="flex min-h-[135vh] items-center justify-center px-4 py-20 sm:px-8 lg:justify-end lg:pr-[7vw]"
-          >
+          <div key={chapter.id} data-story-node data-year={chapter.yearValue}>
             <TimelineChapter chapter={chapter} />
           </div>
         ))}
